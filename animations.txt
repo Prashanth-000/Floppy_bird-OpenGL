@@ -1,0 +1,189 @@
+1.JUMP_BALL
+    #include <GL/freeglut.h>
+    #include <math.h>
+    #include <cstdlib>
+    #include <ctime>
+    #include <vector>
+
+    struct Ball {
+        float x, y;
+        float dx, dy;
+        float r, g, b;
+    };
+
+    std::vector<Ball> trail;
+    Ball ball = { 0.0f, 0.0f, 0.01f, 0.012f, 1.0f, 0.0f, 0.0f };
+    bool isAnimating = true;
+
+    float bgColor[3] = { 0.5f, 0.7f, 0.0f }; // Background color (black by default)
+
+    // Function to draw a circle
+    void drawCircle(float cx, float cy, float r) {
+        glBegin(GL_TRIANGLE_FAN);
+        for (int i = 0; i < 100; i++) {
+            float angle = 2 * 3.14159f * i / 100;
+            glVertex2f(cx + r * cos(angle), cy + r * sin(angle));
+        }
+        glEnd();
+    }
+
+    // Display callback function
+    void display() {
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Set the background color
+        glClearColor(bgColor[0], bgColor[1], bgColor[2], 1.0f);
+
+        // Draw trail
+        float fade = 0.1f;
+        for (const auto& t : trail) {
+            glColor4f(t.r, t.g, t.b, fade);
+            drawCircle(t.x, t.y, 0.05f);
+            fade += 0.1f;
+        }
+
+        // Draw ball
+        glColor3f(ball.r, ball.g, ball.b);
+        drawCircle(ball.x, ball.y, 0.05f);
+
+        glutSwapBuffers();
+    }
+
+    // Timer function to animate the ball
+    void timer(int) {
+        if (isAnimating) {
+            // Add current ball to trail
+            trail.push_back(ball);
+            if (trail.size() > 10) trail.erase(trail.begin());
+
+            // Move ball
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Bounce & change color
+            if (ball.x < -0.95f || ball.x > 0.95f) {
+                ball.dx *= -1;
+                ball.r = (rand() % 100) / 100.0f;
+                ball.g = (rand() % 100) / 100.0f;
+                ball.b = (rand() % 100) / 100.0f;
+            }
+            if (ball.y < -0.95f || ball.y > 0.95f) {
+                ball.dy *= -1;
+                ball.r = (rand() % 100) / 100.0f;
+                ball.g = (rand() % 100) / 100.0f;
+                ball.b = (rand() % 100) / 100.0f;
+            }
+
+            glutPostRedisplay();
+        }
+
+        glutTimerFunc(16, timer, 0);
+    }
+
+    // Keyboard function to toggle animation
+    void keyboard(unsigned char key, int, int) {
+        if (key == 's') isAnimating = true;  // Start animation
+        if (key == 'p') isAnimating = false; // Pause animation
+    }
+
+    // Menu callback to start/stop animation
+    void menu(int value) {
+        if (value == 1) {
+            isAnimating = true;
+        } else if (value == 2) {
+            isAnimating = false;
+        }
+        glutPostRedisplay();
+    }
+
+    // Function to create the menu
+    void createMenu() {
+        int animationMenu = glutCreateMenu(menu);
+        glutAddMenuEntry("Start Animation", 1);
+        glutAddMenuEntry("Pause Animation", 2);
+
+        glutCreateMenu(menu);
+        glutAddSubMenu("Animation Controls", animationMenu);
+        glutAttachMenu(GLUT_RIGHT_BUTTON);
+    }
+
+    // Main function
+    int main(int argc, char** argv) {
+        srand(time(0));
+        glutInit(&argc, argv);
+        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+        glutInitWindowSize(600, 600);
+        glutCreateWindow("Colorful Bouncing Ball");
+
+        glClearColor(0, 0, 0, 1); // Default black background
+
+        glMatrixMode(GL_PROJECTION);
+        gluOrtho2D(-1, 1, -1, 1);
+
+        // Create menu
+        createMenu();
+
+        // Register callbacks
+        glutDisplayFunc(display);
+        glutKeyboardFunc(keyboard);
+        glutTimerFunc(0, timer, 0);
+
+        glutMainLoop();
+        return 0;
+    }
+
+2.Growing Shrinking ball
+
+    #include <GL/freeglut.h>
+    #include <cmath>
+
+    float radius = 0.1f;  // Initial radius of the circle
+    float direction = 0.01f;  // Direction of the radius change (expand/shrink)
+
+    void drawCircle(float cx, float cy, float r) {
+        glBegin(GL_TRIANGLE_FAN);
+        for (int i = 0; i < 100; i++) {
+            float angle = 2 * 3.14159f * i / 100;
+            glVertex2f(cx + r * cos(angle), cy + r * sin(angle));
+        }
+        glEnd();
+    }
+
+    void display() {
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Draw the pulsating circle
+        glColor3f(0.0f, 0.0f, 1.0f);  // Blue color
+        drawCircle(0.0f, 0.0f, radius);
+
+        glutSwapBuffers();
+    }
+
+    void timer(int) {
+        radius += direction;
+
+        // Reverse the direction when the circle reaches a certain size
+        if (radius > 0.5f || radius < 0.1f) {
+            direction = -direction;
+        }
+
+        glutPostRedisplay();
+        glutTimerFunc(16, timer, 0);
+    }
+
+    int main(int argc, char** argv) {
+        glutInit(&argc, argv);
+        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+        glutInitWindowSize(600, 600);
+        glutCreateWindow("Growing and Shrinking Circle");
+
+        glClearColor(0, 0, 0, 1);  // Black background
+        glMatrixMode(GL_PROJECTION);
+        gluOrtho2D(-1, 1, -1, 1);
+
+        glutDisplayFunc(display);
+        glutTimerFunc(0, timer, 0);
+        glutMainLoop();
+
+        return 0;
+    }
